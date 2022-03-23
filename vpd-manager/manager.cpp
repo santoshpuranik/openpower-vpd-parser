@@ -263,7 +263,16 @@ void Manager::performVPDRecollection()
             singleFru["inventoryPath"]
                 .get_ref<const nlohmann::json::string_t&>();
 
-        triggerVpdCollection(singleFru, inventoryPath);
+        if (executePreAction(jsonFile, item))
+        {
+            triggerVpdCollection(singleFru, inventoryPath);
+            // Check if device showed up (test for file)
+            if (!filesystem::exists(item))
+            {
+                // If not, then take failure postAction
+                executePostFailAction(jsonFile, item);
+            }
+        }
     }
 }
 
