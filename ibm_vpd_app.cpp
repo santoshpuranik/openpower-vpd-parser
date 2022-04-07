@@ -1368,7 +1368,7 @@ int main(int argc, char** argv)
     std::string baseFruInventoryPath = {};
 
     // severity for PEL
-    PelSeverity pelSeverity = PelSeverity::INFORMATIONAL;
+    PelSeverity pelSeverity = PelSeverity::WARNING;
 
     try
     {
