@@ -1380,8 +1380,15 @@ static void populateDbus(T& vpdMap, nlohmann::json& js, const string& filePath)
 
     if (isSystemVpd)
     {
-        inventory::ObjectMap primeObject = primeInventory(js, vpdMap);
-        objects.insert(primeObject.begin(), primeObject.end());
+        // Do not prime inventory if the host is powered ON, unless we detect a
+        // factory reset was performed.
+        if (("xyz.openbmc_project.State.Chassis.PowerState.On" !=
+             getPowerState()) ||
+            processFactoryReset)
+        {
+            inventory::ObjectMap primeObject = primeInventory(js, vpdMap);
+            objects.insert(primeObject.begin(), primeObject.end());
+        }
 
         // set the U-boot environment variable for device-tree
         if constexpr (is_same<T, Parsed>::value)
@@ -1542,14 +1549,7 @@ int main(int argc, char** argv)
 
         baseFruInventoryPath = js["frus"][file][0]["inventoryPath"];
         // Check if we can read the VPD file based on the power state
-        // We skip reading VPD when the power is ON in two scenarios:
-        // 1) The eeprom we are trying to read is that of the system VPD and the
-        // JSON symlink is already setup (the symlink's existence tells us we
-        // are not coming out of a factory reset)
-        // 2) The JSON tells us that the FRU EEPROM cannot be
-        // read when we are powered ON.
-        if (js["frus"][file].at(0).value("powerOffOnly", false) ||
-            (file == systemVpdFilePath && fs::exists(INVENTORY_JSON_SYM_LINK)))
+        if (js["frus"][file].at(0).value("powerOffOnly", false))
         {
             if ("xyz.openbmc_project.State.Chassis.PowerState.On" ==
                 getPowerState())
